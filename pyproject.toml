@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "pathological-regularization-regimes"
+version = "0.1.0"
+description = "Implementation for numerical results of the paper Pathological Regularization Regimes in Classification Tasks"
+authors = ["Paul Larsen <munichpavel@gmail.com>", "Maximilian Wiesnmann <>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "prr", from = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+xarray = "^2024.2.0"
+fake-data-for-learning = "^0.4.4"
+hydra-core = "^1.3.2"
+matplotlib = "^3.8.3"
+pyyaml = "^6.0.1"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.1.1"
+notebook = "^7.1.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

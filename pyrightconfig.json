@@ -1,0 +1,14 @@
+{
+    "include": [
+      "src",
+      "tests"
+    ],
+
+    "exclude": [
+      "**/multirun",
+      "**/outputs",
+      "**/data",
+      "**/__pycache__",
+    ],
+
+}

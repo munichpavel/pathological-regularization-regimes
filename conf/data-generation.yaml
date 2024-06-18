@@ -1,0 +1,29 @@
+n_datasets: 1250
+random_seed: 31415926535897
+sample_sizes:
+- 200
+- 600
+- 2400
+
+hydra:
+  run:
+    dir: ./outputs/data-${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job_logging:
+    # Override the logging configuration
+    disable_existing_loggers: false  # Set to true if you want to disable existing loggers
+
+    # Specify the custom logging configuration
+    root:
+      handlers: [console]
+      level: INFO
+
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simpleFormatter
+        level: INFO
+        stream: ext://sys.stdout
+
+    formatters:
+      simpleFormatter:
+        format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
