@@ -1,0 +1,43 @@
+data_version_folder: ???
+data_batch_idx: ???
+n_datasets_per_batch: 250
+clf:
+  parent_module: sklearn.linear_model
+  class_name: LogisticRegression
+  kwargs:
+    C: ???
+    fit_intercept: ???
+    solver: newton-cholesky
+    penalty: l2
+encoding:
+  label_mapping_values:
+    gender:
+    - 0
+    - 1
+    occupation:
+    - 0
+    - 1
+
+hydra:
+  sweep:
+    dir: multirun/model-fit-${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  job_logging:
+    # Override the logging configuration
+    disable_existing_loggers: false  # Set to true if you want to disable existing loggers
+
+    # Specify the custom logging configuration
+    root:
+      handlers: [console]
+      level: INFO
+
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simpleFormatter
+        level: INFO
+        stream: ext://sys.stdout
+
+    formatters:
+      simpleFormatter:
+        format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
