@@ -8,8 +8,8 @@ from omegaconf import OmegaConf
 
 import numpy as np
 
-from arr.utils import generate_log_spaced_array
-from arr.docs import is_monotonically_increasing
+from prr.utils import generate_log_spaced_array
+from prr.docs import is_monotonically_increasing
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -118,9 +118,9 @@ if __name__ == '__main__':
     Usage examples:
 
     poetry run python multirun-script.py \
-        --C_start_power_reg_0 -7 --C_stop_power_reg_0 3 --n_Cs_reg_0 10 \
-        --C_start_power_reg_1 -7 --C_stop_power_reg_1 3 --n_Cs_reg_1 10 \
-        --C_start_power_reg_2 -7 --C_stop_power_reg_2 3 --n_Cs_reg_2 10 \
+        --C_start_power_reg_0 -8 --C_stop_power_reg_0 -6 --n_Cs_reg_0 10 \
+        --C_start_power_reg_1 -6 --C_stop_power_reg_1 1 --n_Cs_reg_1 10 \
+        --C_start_power_reg_2 1 --C_stop_power_reg_2 8 --n_Cs_reg_2 10 \
         --rel_data_parent outputs/data-2024-04-23/15-53-11
 
     """
