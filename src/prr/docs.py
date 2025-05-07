@@ -84,12 +84,12 @@ def write_examples(grouped_df: DataFrameGroupBy, doc_path: Path, example_data: L
 
         # Note: the below are independent of occupation value,
         # so we just take the last
-        params_df = example_values.loc[occupation_mask, ['b', 'w_0', 'w_1']]
+        params_df = example_values.loc[occupation_mask, ['b', 'w_0', 'w_1']]  # type: ignore
         params = {}
         for param_name in ['b', 'w_0', 'w_1']:
             params[param_name] = params_df[param_name].values
         plot_fitted_params_vs_c(
-            Cs[str(occupation_value)],
+            Cs[str(occupation_value)],  # type: ignore
             params,
             out_path = out_dir / 'graphics' / ('params-' + out_filename)
         )
