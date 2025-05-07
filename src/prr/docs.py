@@ -387,13 +387,13 @@ def write_dataset_runs_adversariality_section(grouped_df: DataFrameGroupBy, doc_
         json.dump( most_adversarial_Cs, fp)
 
 
-def plot_most_adversarial_Cs(Cs: List[float], out_path: Path) -> None:
+def plot_most_adversarial_Cs(Cs: Union[List[float], np.ndarray], out_path: Path) -> None:
     # Convert Cs to numpy array for easier manipulation
     Cs = np.array(Cs)
 
     plt.figure(figsize=(10, 6))
     bins = generate_log_spaced_array(-7, 7, 50)  # may need  adjustment
-    plt.hist(Cs, bins=bins, edgecolor='black', alpha=0.7)
+    plt.hist(Cs, bins=bins.tolist(), edgecolor='black', alpha=0.7)
 
     # Set x-axis to log scale
     plt.xscale('log')
