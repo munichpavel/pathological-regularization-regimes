@@ -1,3 +1,5 @@
+from typing import List
+
 import pandas as pd
 import xarray as xr
 
@@ -47,7 +49,7 @@ def make_data_trend_reports(
 
 def make_trend_reports(
     contingency_probabilities: xr.DataArray, population_subgroup: str
-) -> dict:
+) -> List[dict]:
 
     if population_subgroup:
         trend_reports = []
@@ -78,11 +80,11 @@ def make_a_trend_report(score_contingencies: xr.DataArray) -> dict:
     * normalizing would require edge cases (denom == 0) and potentially cause numerical issues
     """
     exposure_name = score_contingencies.dims[0]
-    num_select = {f'{exposure_name}': 0}  # FIXME this will cause problems for
-    denom_select = {f'{exposure_name}': 1}  # non-{0,1} encoding
+    left_select = {f'{exposure_name}': 0}  # FIXME this will cause problems for
+    right_select = {f'{exposure_name}': 1}  # non-{0,1} encoding
     trend = float(
-        score_contingencies[num_select]
-        - score_contingencies[denom_select]
+        score_contingencies[left_select]
+        - score_contingencies[right_select]
     )
     res = {f'{exposure_name}_trend': trend}
     return res
