@@ -1,7 +1,3 @@
-"""
-To run as a script, from the project root run `poetry run python -m simpson.docs`
-"""
-
 from pathlib import Path
 import shutil
 import subprocess
