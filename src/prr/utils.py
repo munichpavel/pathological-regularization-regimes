@@ -69,7 +69,7 @@ def make_feature_combination_score_array(
     )
     for row_idx, feature_series in feature_combinations.iterrows():
         feature_dict = feature_series.to_dict()
-        score_array[tuple(feature_dict.values())] = scores[row_idx]
+        score_array[tuple(feature_dict.values())] = scores[row_idx]  # type: ignore
 
     return score_array
 
@@ -87,7 +87,7 @@ def get_current_data_version_folder(datadir: Path, format="%Y-%m-%d_%H-%M-%S") -
             or timestamp > datetime.datetime.strptime(most_recent_str, format)
         ):
             most_recent_str = timestamp_str
-    return datadir / most_recent_str
+    return datadir / most_recent_str  # type: ignore
 
 
 def scale_up_dataset(df: pd.DataFrame, scale_factor: int) -> pd.DataFrame:
