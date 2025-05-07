@@ -10,14 +10,11 @@ from sklearn.linear_model import LogisticRegression
 
 import xarray as xr
 
-import yaml
-
 from prr.utils import (
     convert_to_categorical, get_object_from_module,
     make_feature_combination_array,
     make_feature_combination_score_array,
     get_current_data_version_folder,
-    get_multirun_artifacts,
     scale_up_dataset
 )
 
@@ -136,50 +133,6 @@ def test_get_current_data_version_folder(tmp_path, folder_names, expected_folder
     expected = datadir / expected_folder_name
 
     assert res == expected
-
-
-def test_get_multirun_json_artifacts(tmp_path):
-    multirun_dir = tmp_path / 'multirun-hh-mm-ss'
-    multirun_dir.mkdir()
-    n_runs = 10
-    artifact_filenames = ['report.json']
-    for run_idx in range(n_runs):
-        json_data = {'idx': run_idx}
-        run_dir = multirun_dir / str(run_idx)
-        run_dir.mkdir()
-        for artifact_filename in artifact_filenames:
-            with open(run_dir / artifact_filename, 'w') as fp:
-                json.dump(json_data, fp=fp)
-
-    multirun_artifacts = get_multirun_artifacts(
-        multirun_dir, artifact_filenames=[artifact_filename]
-    )
-
-    values = [run_artifact[artifact_filenames[0]]['idx'] for run_artifact in multirun_artifacts]
-    assert len(values) == n_runs and set(values) == set(range(n_runs))
-
-
-def test_get_multirun_yaml_artifacts(tmp_path):
-    """Same as above but with yaml rather than json"""
-    multirun_dir = tmp_path / 'multirun-hh-mm-ss'
-    multirun_dir.mkdir()
-    n_runs = 10
-    artifact_filenames = ['config.yaml']
-
-    for run_idx in range(n_runs):
-        config = {'idx': run_idx}
-        run_dir = multirun_dir / str(run_idx)
-        run_dir.mkdir()
-        for artifact_filename in artifact_filenames:
-            with open(run_dir / artifact_filename, 'w') as fp:
-                yaml.dump(config, fp)
-
-    multirun_artifacts = get_multirun_artifacts(
-        multirun_dir, artifact_filenames=[artifact_filename]
-    )
-
-    values = [run_artifact[artifact_filenames[0]]['idx'] for run_artifact in multirun_artifacts]
-    assert len(values) == n_runs and set(values) == set(range(n_runs))
 
 
 def test_scale_up_dataset():

@@ -69,7 +69,7 @@ def make_feature_combination_score_array(
     )
     for row_idx, feature_series in feature_combinations.iterrows():
         feature_dict = feature_series.to_dict()
-        score_array[feature_dict] = scores[row_idx]
+        score_array[tuple(feature_dict.values())] = scores[row_idx]
 
     return score_array
 
@@ -88,36 +88,6 @@ def get_current_data_version_folder(datadir: Path, format="%Y-%m-%d_%H-%M-%S") -
         ):
             most_recent_str = timestamp_str
     return datadir / most_recent_str
-
-
-def get_multirun_artifacts(
-    multirun_dir: Path, artifact_filenames: List[str]
-) -> List[Dict]:
-    multirun_artifacts = []
-
-    for p in multirun_dir.iterdir():
-        try:
-            if p.is_dir():
-                run_artifacts = {}
-
-                for filename in artifact_filenames:
-                    with open(p / filename, 'r') as fp:
-                        suffix = Path(filename).suffix
-                        if suffix == '.json':
-                            artifact = json.load(fp)
-                        elif suffix in ['.yaml', '.yml']:
-                            artifact = yaml.safe_load(fp)
-                        else:
-                            msg = f'Opening artifact with suffix {suffix} not implemented'
-                            raise NotImplementedError(msg)
-                    run_artifacts[filename] = artifact
-                multirun_artifacts.append(run_artifacts)
-
-        except FileNotFoundError as err:
-            logger.warning(err)
-
-
-    return multirun_artifacts
 
 
 def scale_up_dataset(df: pd.DataFrame, scale_factor: int) -> pd.DataFrame:
