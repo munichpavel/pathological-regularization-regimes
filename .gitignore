@@ -45,3 +45,7 @@ venv.bak/
 
 # hydra outputs
 outputs/
+multirun/
+
+# generated docs
+docs/
