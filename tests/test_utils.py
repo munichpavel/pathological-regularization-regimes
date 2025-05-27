@@ -15,7 +15,10 @@ from prr.utils import (
     make_feature_combination_array,
     make_feature_combination_score_array,
     get_current_data_version_folder,
-    scale_up_dataset
+    scale_up_dataset,
+    is_monotonically_increasing,
+    is_monotonically_non_decreasing,
+    GridSegment, generate_log_spaced_grid
 )
 
 def test_convert_to_categorical():
@@ -145,3 +148,85 @@ def test_scale_up_dataset():
     res = scale_up_dataset(df, scale_factor)
 
     pd.testing.assert_frame_equal(res, expected)
+
+
+
+@pytest.mark.parametrize(
+    'Cs,expected',
+    [
+        (np.array([0., 1., 2.]), True),
+        (np.array([42., 42., 42.]), False),
+        (np.array([0, -0.0001, -0.00001]), False),
+        (np.array([0, -1, 2]), False)
+    ]
+)
+def test_is_monotonically_increasing(Cs, expected):
+    res = is_monotonically_increasing(Cs)
+    assert res == expected
+
+
+@pytest.mark.parametrize(
+    'Cs,expected',
+    [
+        (np.array([0., 1., 2.]), True),
+        (np.array([42., 42., 42.]), True),
+        (np.array([0, -0.0001, -0.00001]), False),
+        (np.array([0, -1, 2]), False)
+    ]
+)
+def test_is_monotonically_non_decreasing(Cs, expected):
+    res = is_monotonically_non_decreasing(Cs)
+    assert res == expected
+
+
+@pytest.mark.parametrize(
+    "grid_config,ExpectedException,expected",
+    [
+        (
+            [GridSegment(start_power=0, stop_power=1, n_grid=5)],
+            None,
+            np.logspace(0, 1, 5, endpoint=False)
+        ),
+        (
+            [
+                GridSegment(start_power=0, stop_power=1, n_grid=5),
+                GridSegment(start_power=1, stop_power=2, n_grid=5)
+            ],
+            None,
+            np.concatenate([
+                np.logspace(0, 1, 5, endpoint=False),
+                np.logspace(1, 2, 5, endpoint=False)
+            ])
+        ),
+        (
+            [
+                GridSegment(start_power=1, stop_power=0, n_grid=5)
+            ],
+            ValueError,
+            None
+        ),
+        (
+            [
+                GridSegment(start_power=0, stop_power=1, n_grid=5),
+                GridSegment(start_power=2, stop_power=1, n_grid=5)
+            ],
+            ValueError,
+            None
+        ),
+                    (
+            [
+                GridSegment(start_power=0, stop_power=2, n_grid=5),
+                GridSegment(start_power=1, stop_power=1, n_grid=5)
+            ],
+            ValueError,
+            None
+        )
+    ]
+)
+def test_generate_log_spaced_grid(grid_config, ExpectedException, expected):
+    if ExpectedException:
+        with pytest.raises(ExpectedException):
+            generate_log_spaced_grid(grid_config)
+    else:
+        res = generate_log_spaced_grid(grid_config)
+        np.testing.assert_array_almost_equal(res, expected)

@@ -16,7 +16,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from .utils import generate_log_spaced_array
+from .utils import generate_log_spaced_array, is_monotonically_non_decreasing
 
 
 logging.basicConfig(level=logging.INFO)
@@ -289,16 +289,6 @@ def find_most_adversarial_c(Cs: np.ndarray, trends: np.ndarray) -> Dict:
     except IndexError as _:
         res = dict()
 
-    return res
-
-
-def is_monotonically_non_decreasing(Cs: np.ndarray) -> np.bool_:
-    res = np.all(np.diff(Cs) >= 0)
-    return res
-
-
-def is_monotonically_increasing(Cs: np.ndarray) -> np.bool_:
-    res = np.all(np.diff(Cs) > 0)
     return res
 
 

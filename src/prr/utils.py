@@ -4,15 +4,13 @@ from itertools import product
 from typing import List, Dict
 from pathlib import Path
 import datetime
-import json
+from dataclasses import dataclass
 
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 
 import xarray as xr
 import numpy as np
-
-import yaml
 
 
 logging.basicConfig(
@@ -96,8 +94,44 @@ def scale_up_dataset(df: pd.DataFrame, scale_factor: int) -> pd.DataFrame:
     return res
 
 
+@dataclass
+class GridSegment:
+    start_power: int
+    stop_power: int
+    n_grid: int
+
+
+def generate_log_spaced_grid(grid_config: List[GridSegment]) -> np.ndarray:
+    """Generate a 1-d log base-10 spaced grid from the grid configuration.
+
+    Includes validation for monotonically increasing grid values
+    """
+    C_values = []
+    for a_grid_segment_config in grid_config:
+        segment_grid = generate_log_spaced_array(
+            a_grid_segment_config.start_power, a_grid_segment_config.stop_power,
+            a_grid_segment_config.n_grid
+        )
+        C_values.append(segment_grid)
+    Cs = np.concat(C_values)
+    if not is_monotonically_increasing(Cs):
+        print(Cs)
+        raise ValueError("Regularization parameters must be monotocically increasing")
+    return Cs
+
+
 def generate_log_spaced_array(start_power: int, stop_power:int, num: int) -> np.ndarray:
-    # Generate n floats evenly spaced in log scale
+    # Generate n floats evenly spaced in log base-10 scale
     C = np.logspace(start=start_power, stop=stop_power, num=num, endpoint=False)
 
     return C
+
+
+def is_monotonically_non_decreasing(Cs: np.ndarray) -> np.bool_:
+    res = np.all(np.diff(Cs) >= 0)
+    return res
+
+
+def is_monotonically_increasing(Cs: np.ndarray) -> np.bool_:
+    res = np.all(np.diff(Cs) > 0)
+    return res

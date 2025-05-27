@@ -16,7 +16,7 @@ from sklearn.linear_model import LogisticRegression
 import pandas as pd
 
 from prr.docs import (
-    find_most_adversarial_c, is_monotonically_non_decreasing,
+    find_most_adversarial_c,
     extract_discussion_config_params,
     get_multirun_artifacts,
     make_trend_grouped_df, get_multirun_reports,
@@ -33,23 +33,6 @@ def test_find_most_adversarial_c():
     expected = dict(C=0.1, trend=-1)
 
     res = find_most_adversarial_c(cs, trends)
-    assert res == expected
-
-
-@pytest.mark.parametrize(
-    'Cs,expected',
-    [
-        (np.array([0., 1., 2.]), True),
-        (np.array([42., 42., 42.]), True),
-        (np.array([0, -0.0001, -0.00001]), False),
-        (np.array([0, -1, 2]), False)
-    ]
-)
-def test_is_monotonically_non_decreasing(Cs, expected):
-    # Cs = np.array([0., 1., 2.])
-    # expected = True
-
-    res = is_monotonically_non_decreasing(Cs)
     assert res == expected
 
 

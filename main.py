@@ -1,24 +1,19 @@
 import os
 from pathlib import Path
 import logging
-import json
 
 import numpy as np
 import pandas as pd
 
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 
 from prr.utils import (
     convert_to_categorical,
     get_object_from_module,
-    make_feature_combination_array,
-    make_feature_combination_score_array
+    generate_log_spaced_grid
 )
-
-from prr.trends import make_trend_reports
-
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('simpsons-paradox-main')
@@ -51,54 +46,30 @@ def main(cfg: DictConfig) -> None:
 
     logger.info('Fitting model')
     Clf = get_object_from_module(parent_module_name=cfg.clf.parent_module, object_name=cfg.clf.class_name)
-    clf = Clf(**cfg.clf.kwargs)
-    clf.fit(X, y)
+    C_grid = generate_log_spaced_grid(cfg.clf.C_grid).tolist()
+    model_params = []
+    for C_value in C_grid:
+        model_kwargs = OmegaConf.to_container(cfg.clf.kwargs)
+        model_kwargs['C'] = C_value  # type: ignore
+        clf = Clf(**model_kwargs)  # type: ignore
+        clf.fit(X, y)
 
-    # check for convergence
-    if clf.n_iter_[0] == clf.max_iter:
-        logger.info('Solver did not converge, skipping')
-    else:
+        # check for convergence
+        if clf.n_iter_[0] == clf.max_iter:
+            logger.info('Solver did not converge, skipping')
+            model_params.append(
+                dict(C=C_value, b=np.nan, w_0=np.nan, w_1=np.nan)
+            )
+        else:
 
-        b = clf.intercept_
-        w = clf.coef_.tolist()
-        coefs = dict(b=b.tolist(), w=w)
+            b = clf.intercept_
+            w = clf.coef_
+            model_params.append(
+                dict(C=C_value, b=b[0], w_0=w[0,0], w_1=w[0,1])
+            )
 
-        logger.debug(f"Writing b, w to disk: {coefs}")
-        with open(f'coefs.json', 'w') as fp:
-            json.dump(coefs, fp=fp, indent=2)
-
-
-        logger.debug("Evaluating on feature combinations")
-        feature_combination_array = make_feature_combination_array(
-            label_mapping_values=dict(cfg.encoding.label_mapping_values)
-        )
-
-        scores = clf.predict_proba(feature_combination_array)
-        prob_default = scores[:, [1]]  # Class 1 is default, class 0 no-default
-
-
-        feature_combination_scores = pd.DataFrame(
-            np.concatenate([feature_combination_array, prob_default], axis=1),
-            columns=feature_fields + ['default_score']
-        )
-        for feature in feature_fields:
-            feature_combination_scores[feature] = feature_combination_scores[feature].astype(int)
-        feature_combination_scores.to_csv(f'feature_probabilities.csv', index=False)
-
-        # Convert flat probabilities to xarray for more robust accessing
-        feature_combination_contingency = make_feature_combination_score_array(
-            feature_combinations=feature_combination_scores[feature_fields],
-            scores=feature_combination_scores['default_score']
-        )
-
-        sub_population_trend_reports = make_trend_reports(
-            feature_combination_contingency, population_subgroup=NON_EXPOSURE_FIELD_NAME
-        )
-
-        logger.debug(f"Writing trend reports {sub_population_trend_reports}")
-        with open('model_trend_reports.json', 'w') as fp:
-            json.dump(sub_population_trend_reports, fp, indent=2)
-
+    model_params_df = pd.DataFrame(model_params)
+    model_params_df.to_csv('model-paramses.csv', index=False)
 
 if __name__ == '__main__':
     main()
