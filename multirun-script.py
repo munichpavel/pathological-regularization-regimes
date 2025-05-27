@@ -1,5 +1,5 @@
 import concurrent.futures
-from typing import List, Tuple
+from typing import List, Tuple, Union
 import logging
 import os
 from pathlib import Path
@@ -38,7 +38,7 @@ def process_batch(
 
 def main(
     rel_data_parent: str,
-    max_workers: int = None  # None means use all available cores
+    max_workers: Union[None, int] = None  # None means use all available cores
 ) -> None:
     # Sweep over data samples
     repo_root = Path(os.environ['REPO_ROOT'])

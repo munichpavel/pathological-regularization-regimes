@@ -47,5 +47,6 @@ venv.bak/
 outputs/
 multirun/
 
-# generated docs
+# generated docs and reports
 docs/
+benchmarking-reports/
