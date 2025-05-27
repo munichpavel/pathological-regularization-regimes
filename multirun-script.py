@@ -1,3 +1,5 @@
+import concurrent.futures
+from typing import List, Tuple
 import logging
 import os
 from pathlib import Path
@@ -11,8 +13,32 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+def process_batch(
+    batch_data: Tuple[List[str], List[str], int, bool, Path]
+) -> None:
+    simpson_dirs, non_simpson_dirs, batch_idx, fit_intercept, repo_root = batch_data
+    rel_data_dirs = simpson_dirs + non_simpson_dirs
+    rel_data_dir_strs = ','.join(rel_data_dirs)
+
+    logger.info(
+        f'Batch {batch_idx}: Processing {len(simpson_dirs)} simpson and '
+        f'{len(non_simpson_dirs)} non-simpson datasets'
+    )
+
+    subprocess.run([
+        'poetry', 'run', 'python', 'main.py',
+        '--multirun',
+        f'data_version_folder={rel_data_dir_strs}',
+        f'data_batch_idx={batch_idx}',
+        f'clf.kwargs.fit_intercept={str(fit_intercept).lower()}',
+        '+hydra.job.chdir=True',
+        '+hydra.sweeper.max_batch_size=10',
+    ])
+
+
 def main(
-    rel_data_parent: str
+    rel_data_parent: str,
+    max_workers: int = None  # None means use all available cores
 ) -> None:
     # Sweep over data samples
     repo_root = Path(os.environ['REPO_ROOT'])
@@ -55,7 +81,7 @@ def main(
         )
 
         batch_size = base_config.n_datasets_per_batch
-        n_batches =  data_gen_config.n_datasets / batch_size
+        n_batches = data_gen_config.n_datasets / batch_size
         if n_batches.is_integer():
             n_batches = int(n_batches)
         else:
@@ -64,6 +90,7 @@ def main(
                 f'number-of-datasets {data_gen_config.n_datasets}'
             )
 
+        batch_tasks = []
         for data_batch_idx in range(n_batches):
             batch_simpson_dirs = rel_simpson_data_dirs[
                 data_batch_idx * batch_size: (data_batch_idx + 1) * batch_size
@@ -71,27 +98,19 @@ def main(
             batch_non_simpson_dirs = rel_non_simpson_data_dirs[
                 data_batch_idx * batch_size: (data_batch_idx + 1) * batch_size
             ]
-            logger.info(
-            f'Batch {data_batch_idx}: Using {len(batch_simpson_dirs)} simpson and '
-            f'{len(batch_non_simpson_dirs)} non-simpson datasets'
-        )
 
-            rel_data_dirs = (batch_simpson_dirs + batch_non_simpson_dirs)
-            rel_data_dir_strs = ','.join(rel_data_dirs)
+            for fit_intercept in [True, False]:
+                batch_tasks.append((
+                    batch_simpson_dirs,
+                    batch_non_simpson_dirs,
+                    data_batch_idx,
+                    fit_intercept,
+                    repo_root
+                ))
 
-            n_runs = len(rel_data_dirs) # * len(Cs)
-            logger.info(f'Starting sweep over {n_runs} in batch')
-            for fit_intercept in ['true','false']:
-                subprocess.run([
-                    'poetry', 'run', 'python', 'main.py',
-                    '--multirun',
-                    f'data_version_folder={rel_data_dir_strs}',
-                    f'data_batch_idx={data_batch_idx}',
-                    f'clf.kwargs.fit_intercept={fit_intercept}',
-                    '+hydra.job.chdir=True',
-                    '+hydra.sweeper.max_batch_size=10',
-                ])
-
+        # Process batches in parallel
+        with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+            list(executor.map(process_batch, batch_tasks))
 
 if __name__ == '__main__':
     """
@@ -105,5 +124,6 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Multirun script for model-fitting')
     parser.add_argument('--rel_data_parent', type=str, help='Data parent folder relative to repo root')
+    parser.add_argument('--max_workers', type=int, default=None, help='Maximum number of parallel workers')
     args = parser.parse_args()
-    main(args.rel_data_parent)
+    main(args.rel_data_parent, args.max_workers)
