@@ -1,16 +1,18 @@
 import logging
 import importlib
 from itertools import product
-from typing import List, Dict
 from pathlib import Path
 import datetime
 from dataclasses import dataclass
+from typing import Union
 
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 
 import xarray as xr
 import numpy as np
+
+from sklearn.linear_model import LogisticRegression
 
 
 logging.basicConfig(
@@ -20,8 +22,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+MODEL_PARAMS_FILENAME = 'model-paramses.csv'
+TARGET_VALUES = [0, 1]
+
 def convert_to_categorical(
-        df: pd.DataFrame, categorical_values_dict: Dict
+        df: pd.DataFrame, categorical_values_dict: dict
     ) -> pd.DataFrame:
     data_categories = {}
     for feature_name, feature_values in categorical_values_dict.items():
@@ -40,7 +45,32 @@ def get_object_from_module(parent_module_name: str, object_name: str):
     return an_object
 
 
-def make_feature_combination_array(label_mapping_values: Dict) -> np.ndarray:
+def make_logistic_regression_feature_combination_score_array(
+    fit_intercept: bool, b: Union[None, float], w: list[float],
+    label_mapping_values: dict, target_values: np.ndarray
+):
+    clf = LogisticRegression(fit_intercept=fit_intercept)
+    if fit_intercept:
+        clf.intercept_ = np.array([b])
+    else:
+        clf.intercept_ = np.array([0.])
+    clf.coef_ = np.array([w])
+    clf.classes_ = target_values
+
+    feature_combination_array = make_feature_combination_array(label_mapping_values)
+    probas = clf.predict_proba(feature_combination_array)
+    scores = pd.Series(probas[:, 1], name='default_score')  # Class 1 is default, class 0 no-default
+
+    feature_fields = list(label_mapping_values.keys())
+    feature_combination_df = pd.DataFrame(feature_combination_array, columns=feature_fields)
+    res = make_feature_combination_score_array(
+        feature_combinations=feature_combination_df,
+        scores = scores
+    )
+    return res
+
+
+def make_feature_combination_array(label_mapping_values: dict) -> np.ndarray:
     res = np.array(list(product(*list(label_mapping_values.values()))))
     return res
 
@@ -101,7 +131,7 @@ class GridSegment:
     n_grid: int
 
 
-def generate_log_spaced_grid(grid_config: List[GridSegment]) -> np.ndarray:
+def generate_log_spaced_grid(grid_config: list[GridSegment]) -> np.ndarray:
     """Generate a 1-d log base-10 spaced grid from the grid configuration.
 
     Includes validation for monotonically increasing grid values

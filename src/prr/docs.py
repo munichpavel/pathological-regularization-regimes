@@ -144,43 +144,43 @@ def get_multirun_artifacts(
     return multirun_artifacts
 
 
-def make_trend_grouped_df(model_trend_reports: List, algorithm_class_name: str) -> DataFrameGroupBy:
-    regularization_vs_trend_per_dataset = []
-    for occupation_value in OCCUPATION_VALUES:
-        for run_reports in model_trend_reports:
-            reg_vs_trend = {}
-            trend_report = run_reports['model_trend_reports.json']
-            subpop_trend_report = [
-                subpop_report for subpop_report in trend_report#['gender_occupation']
-                if subpop_report['population_value'] == occupation_value
-            ][0]
-            reg_vs_trend['occupation_value'] = occupation_value
-            trend_subpop = subpop_trend_report['trend']['gender_trend']
-            reg_vs_trend['trend'] = trend_subpop
+# def make_trend_grouped_df(model_trend_reports: List, algorithm_class_name: str) -> DataFrameGroupBy:
+#     regularization_vs_trend_per_dataset = []
+#     for occupation_value in OCCUPATION_VALUES:
+#         for run_reports in model_trend_reports:
+#             reg_vs_trend = {}
+#             trend_report = run_reports['model_trend_reports.json']
+#             subpop_trend_report = [
+#                 subpop_report for subpop_report in trend_report#['gender_occupation']
+#                 if subpop_report['population_value'] == occupation_value
+#             ][0]
+#             reg_vs_trend['occupation_value'] = occupation_value
+#             trend_subpop = subpop_trend_report['trend']['gender_trend']
+#             reg_vs_trend['trend'] = trend_subpop
 
-            # Note: the below values are independent of occupation value, so values
-            # will be duplicated across rows
-            run_config = run_reports['.hydra/config.yaml']
-            coef_report = run_reports['coefs.json']
+#             # Note: the below values are independent of occupation value, so values
+#             # will be duplicated across rows
+#             run_config = run_reports['.hydra/config.yaml']
+#             coef_report = run_reports['coefs.json']
 
-            if algorithm_class_name == 'LogisticRegression':
-                reg_vs_trend['b'] = coef_report['b'][0]
-                reg_vs_trend['w_0'] = coef_report['w'][0][0]
-                reg_vs_trend['w_1'] = coef_report['w'][0][1]
+#             if algorithm_class_name == 'LogisticRegression':
+#                 reg_vs_trend['b'] = coef_report['b'][0]
+#                 reg_vs_trend['w_0'] = coef_report['w'][0][0]
+#                 reg_vs_trend['w_1'] = coef_report['w'][0][1]
 
-                C = run_config['clf']['kwargs']['C']
-            else:
-                raise NotImplementedError(f'for {algorithm_class_name}')
+#                 C = run_config['clf']['kwargs']['C']
+#             else:
+#                 raise NotImplementedError(f'for {algorithm_class_name}')
 
-            reg_vs_trend['C'] = C
-            reg_vs_trend['data_version_folder'] = run_config['data_version_folder']
+#             reg_vs_trend['C'] = C
+#             reg_vs_trend['data_version_folder'] = run_config['data_version_folder']
 
-            regularization_vs_trend_per_dataset.append(reg_vs_trend)
-    # regularization_vs_trend_per_dataset
-    df = pd.DataFrame(regularization_vs_trend_per_dataset)
-    grouped = df.sort_values('C').groupby('data_version_folder')
+#             regularization_vs_trend_per_dataset.append(reg_vs_trend)
+#     # regularization_vs_trend_per_dataset
+#     df = pd.DataFrame(regularization_vs_trend_per_dataset)
+#     grouped = df.sort_values('C').groupby('data_version_folder')
 
-    return grouped
+#     return grouped
 
 
 def convert_rel_path_to_filename(rel_path: str, extension='.png') -> str:
@@ -259,37 +259,37 @@ def plot_fitted_params_vs_c(Cs: np.ndarray, params: Dict[str, np.ndarray], out_p
     plt.close()
 
 
-def make_adversarial_report(Cs: Dict[str, np.ndarray], trends: Dict[str, np.ndarray]) -> List[Dict]:
-    report = []
-    for occupation_value in OCCUPATION_VALUES:
-        occupation_report = {}
-        occupation_report['occupation_value'] = occupation_value
-        occupation_report['most_adversarial_Cs'] = find_most_adversarial_c(
-            Cs=Cs[str(occupation_value)],
-            trends=trends[str(occupation_value)]
-        )
-        # occupation_report['is_adversarial'] = bool(occupation_report['most_adversarial_cs'])
-        report.append(occupation_report)
+# def make_adversarial_report(Cs: Dict[str, np.ndarray], trends: Dict[str, np.ndarray]) -> List[Dict]:
+#     report = []
+#     for occupation_value in OCCUPATION_VALUES:
+#         occupation_report = {}
+#         occupation_report['occupation_value'] = occupation_value
+#         occupation_report['most_adversarial_Cs'] = find_most_adversarial_c(
+#             Cs=Cs[str(occupation_value)],
+#             trends=trends[str(occupation_value)]
+#         )
+#         # occupation_report['is_adversarial'] = bool(occupation_report['most_adversarial_cs'])
+#         report.append(occupation_report)
 
-    return report
+#     return report
 
 
-def find_most_adversarial_c(Cs: np.ndarray, trends: np.ndarray) -> Dict:
-    if not is_monotonically_non_decreasing(Cs):
-        raise ValueError(f'Cs are not monotonically non-decreasing: {Cs}.')
-    df = pd.DataFrame(dict(C=Cs, trend=trends))
-    trend_largest_C = df.trend.iloc[-1]
+# def find_most_adversarial_c(Cs: np.ndarray, trends: np.ndarray) -> Dict:
+#     if not is_monotonically_non_decreasing(Cs):
+#         raise ValueError(f'Cs are not monotonically non-decreasing: {Cs}.')
+#     df = pd.DataFrame(dict(C=Cs, trend=trends))
+#     trend_largest_C = df.trend.iloc[-1]
 
-    try:
-        if trend_largest_C > 0:
-            res = df.loc[df.trend < 0].sort_values('trend', ascending=True).iloc[0]
-        else:
-            res = df.loc[df.trend > 0].sort_values('trend', ascending=False).iloc[0]
-        res = dict(res)
-    except IndexError as _:
-        res = dict()
+#     try:
+#         if trend_largest_C > 0:
+#             res = df.loc[df.trend < 0].sort_values('trend', ascending=True).iloc[0]
+#         else:
+#             res = df.loc[df.trend > 0].sort_values('trend', ascending=False).iloc[0]
+#         res = dict(res)
+#     except IndexError as _:
+#         res = dict()
 
-    return res
+#     return res
 
 
 def make_example_section(an_example: Example, adversarial_report: List[Dict], out_dir: Path) -> str:

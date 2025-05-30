@@ -78,8 +78,7 @@ def test_compute_margin(a_data_array, non_margin_sel, expected):
             xr.DataArray(
                 [42, 42], dims=("gender"), coords={"gender": [0, 1]}
             ),
-
-            dict(gender_trend= 0)
+            dict(gender_trend=0)
         ),
         (
             xr.DataArray(

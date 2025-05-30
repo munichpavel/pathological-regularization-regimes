@@ -1,7 +1,9 @@
-n_datasets: 10
+n_datasets: 1250
 random_seed: 31415926535897
 sample_sizes:
+- 200
 - 600
+- 2400
 
 hydra:
   run:

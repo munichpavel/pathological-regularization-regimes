@@ -50,3 +50,4 @@ multirun/
 # generated docs and reports
 docs/
 benchmarking-reports/
+run-stats/

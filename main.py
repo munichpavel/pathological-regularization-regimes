@@ -12,7 +12,8 @@ from omegaconf import DictConfig, OmegaConf
 from prr.utils import (
     convert_to_categorical,
     get_object_from_module,
-    generate_log_spaced_grid
+    generate_log_spaced_grid,
+    MODEL_PARAMS_FILENAME
 )
 
 logging.basicConfig(level=logging.DEBUG)
@@ -27,7 +28,7 @@ NON_EXPOSURE_FIELD_NAME = 'occupation'
 
 @hydra.main(version_base=None, config_path="conf", config_name='base-model-fitting')
 def main(cfg: DictConfig) -> None:
-
+    print(cfg.data_version_folder)
     datadir = Path(os.environ['REPO_ROOT']) / cfg.data_version_folder
     logger.info("Loading data")
     df = pd.read_csv(datadir / 'default.csv')
@@ -69,7 +70,7 @@ def main(cfg: DictConfig) -> None:
             )
 
     model_params_df = pd.DataFrame(model_params)
-    model_params_df.to_csv('model-paramses.csv', index=False)
+    model_params_df.to_csv(MODEL_PARAMS_FILENAME, index=False)
 
 if __name__ == '__main__':
     main()

@@ -1,4 +1,4 @@
-import json
+from math import exp
 
 import pytest
 
@@ -12,6 +12,7 @@ import xarray as xr
 
 from prr.utils import (
     convert_to_categorical, get_object_from_module,
+    make_logistic_regression_feature_combination_score_array,
     make_feature_combination_array,
     make_feature_combination_score_array,
     get_current_data_version_folder,
@@ -50,6 +51,76 @@ def test_load_module_object():
     a_method = getattr(an_object, method_name)
 
     assert type(LogisticRegression.fit) == type(a_method)
+
+
+@pytest.mark.parametrize(
+    'fit_intercept,b,w,label_mapping_values,target_values,expected',
+    [
+        (
+            True,
+            0.,
+            [0., 0.],
+            {
+                "gender": [0, 1],
+                "occupation": [0, 1],
+            },
+            np.array([0, 1]),
+            xr.DataArray(
+                [
+                    [0.5, 0.5],
+                    [0.5, 0.5]
+                ],
+                dims=('gender', 'occupation'),
+                coords=dict(gender=[0, 1], occupation=[0, 1])
+            )
+        ),
+        (
+            False,
+            None,
+            [0., 0.],
+            {
+                "gender": [0, 1],
+                "occupation": [0, 1],
+            },
+            np.array([0, 1]),
+            xr.DataArray(
+                [
+                    [0.5, 0.5],
+                    [0.5, 0.5]
+                ],
+                dims=('gender', 'occupation'),
+                coords=dict(gender=[0, 1], occupation=[0, 1])
+            )
+        ),
+        (
+            True,
+            1.,
+            [-1., -1.],
+            {
+                "gender": [0, 1],
+                "occupation": [0, 1],
+            },
+            np.array([0, 1]),
+            xr.DataArray(
+                [
+                    [1./(1 + exp(-1)), 0.5],
+                    [0.5, 1. / (1 + exp(1))]
+                ],
+                dims=('gender', 'occupation'),
+                coords=dict(gender=[0, 1], occupation=[0, 1])
+            )
+        ),
+    ]
+)
+def test_make_logistic_regression_feature_combination_score_array(
+    fit_intercept, b, w, label_mapping_values, target_values, expected
+):
+    res = make_logistic_regression_feature_combination_score_array(
+        fit_intercept=fit_intercept, b=b, w=w,
+        label_mapping_values=label_mapping_values,
+        target_values=target_values
+    )
+    xr.testing.assert_allclose(res, expected)
 
 
 @pytest.mark.parametrize(
